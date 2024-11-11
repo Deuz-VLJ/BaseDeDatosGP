@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BDCliente.cs" />
+    <Compile Include="BDGraficas.cs" />
     <Compile Include="BDInventario.cs" />
     <Compile Include="ConexionInisio.cs" />
     <Compile Include="BDProductos.cs" />
