@@ -72,7 +72,7 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "INSERT INTO Producto (Nombre, Precio, Descripcion) VALUES (@Nombre, @Precio, @Descripcion)";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el INSERT\r\n    INSERT INTO Producto (Nombre, Precio, Descripcion) \r\n    VALUES (@Nombre, @Precio, @Descripcion);\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
                     using (SqlCommand cmd = new SqlCommand(query, con.ObtenerConexion()))
                     {
                         cmd.Parameters.AddWithValue("@Nombre", nombre);
@@ -154,7 +154,7 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "UPDATE Producto SET Nombre = @Nombre, Precio = @Precio, Descripcion = @Descripcion WHERE ID_Producto = @ID_Producto";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el UPDATE\r\n    UPDATE Producto \r\n    SET Nombre = @Nombre, Precio = @Precio, Descripcion = @Descripcion \r\n    WHERE ID_Producto = @ID_Producto;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
                     using (SqlCommand cmd = new SqlCommand(query, con.ObtenerConexion()))
                     {
                         cmd.Parameters.AddWithValue("@ID_Producto", idProducto);
@@ -220,7 +220,7 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "DELETE FROM Producto WHERE ID_Producto = @ID_Producto";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el DELETE\r\n    DELETE FROM Producto \r\n    WHERE ID_Producto = @ID_Producto;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {

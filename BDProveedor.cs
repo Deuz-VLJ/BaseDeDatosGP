@@ -83,7 +83,7 @@ namespace BaseDeDatosGP
                 try
                 {
                     // Consulta SQL para insertar un nuevo Proveedor
-                    string query = "INSERT INTO Proveedor (Nombre, Telefono, Direccion) VALUES (@Nombre, @Telefono, @Direccion)";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el INSERT\r\n    INSERT INTO Proveedor (Nombre, Telefono, Direccion) \r\n    VALUES (@Nombre, @Telefono, @Direccion);\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {
@@ -185,7 +185,7 @@ namespace BaseDeDatosGP
             {
                 try
                 {
-                    string query = "UPDATE Proveedor SET Nombre = @Nombre, Telefono = @Telefono, Direccion = @Direccion WHERE ID_Proveedor = @ID_Proveedor";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el UPDATE\r\n    UPDATE Proveedor \r\n    SET Nombre = @Nombre, Telefono = @Telefono, Direccion = @Direccion \r\n    WHERE ID_Proveedor = @ID_Proveedor;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {
@@ -262,7 +262,7 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "DELETE FROM Proveedor WHERE ID_Proveedor = @ID_Proveedor";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el DELETE\r\n    DELETE FROM Proveedor \r\n    WHERE ID_Proveedor = @ID_Proveedor;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {

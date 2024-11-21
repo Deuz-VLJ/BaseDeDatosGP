@@ -250,12 +250,13 @@ namespace BaseDeDatosGP
         public bool InsertarVenta(DateTime fecha, decimal importe, decimal iva, decimal total, string metodoPago, int idCliente, List<DetalleVenta> detalles)
         {
             ConexionInisio con = new ConexionInisio();
-           
+
             // Abrir la conexión
             if (!con.AbrirConexion())
             {
                 return false;
             }
+
             conexion = con.ObtenerConexion();
             SqlTransaction transaction = null;
 
@@ -267,7 +268,7 @@ namespace BaseDeDatosGP
                 // Insertar la venta
                 string queryVenta = "INSERT INTO Venta (Fecha, Importe, Iva, Total, Metodo_Pago, ID_Cliente) " +
                                     "VALUES (@Fecha, @Importe, @Iva, @Total, @Metodo_Pago, @ID_Cliente); " +
-                                    "SELECT SCOPE_IDENTITY();"; // Para obtener el ID de la venta generada
+                                    "SELECT SCOPE_IDENTITY();"; // Obtener el ID de la venta generada
 
                 SqlCommand comandoVenta = new SqlCommand(queryVenta, conexion, transaction);
                 comandoVenta.Parameters.AddWithValue("@Fecha", fecha);
@@ -302,7 +303,7 @@ namespace BaseDeDatosGP
 
                     // Insertar el detalle de la venta
                     string queryDetalle = "INSERT INTO DetalleVenta (ID_Venta, ID_Producto, Cantidad, Precio_Unitario, Subtotal) " +
-                                          "VALUES (@ID_Venta, @ID_Producto, @Cantidad, @Precio_Unitario, @Subtotal)";
+                                          "VALUES (@ID_Venta, @ID_Producto, @Cantidad, @Precio_Unitario, @Subtotal);";
 
                     SqlCommand comandoDetalle = new SqlCommand(queryDetalle, conexion, transaction);
                     comandoDetalle.Parameters.AddWithValue("@ID_Venta", idVenta);
@@ -314,8 +315,9 @@ namespace BaseDeDatosGP
                     comandoDetalle.ExecuteNonQuery();
 
                     // Actualizar la cantidad salida en la tabla Saldos
-                    string queryActualizarSaldo = "UPDATE Saldos SET Cantidad_Salida = Cantidad_Salida + @Cantidad " +
-                                                  "WHERE ID_Producto = @ID_Producto";
+                    string queryActualizarSaldo = "UPDATE Saldos " +
+                                                  "SET Cantidad_Salida = Cantidad_Salida + @Cantidad " +
+                                                  "WHERE ID_Producto = @ID_Producto;";
 
                     SqlCommand comandoActualizarSaldo = new SqlCommand(queryActualizarSaldo, conexion, transaction);
                     comandoActualizarSaldo.Parameters.AddWithValue("@Cantidad", detalle.Cantidad);
@@ -335,6 +337,7 @@ namespace BaseDeDatosGP
                 Console.WriteLine("Error al insertar la venta: " + ex.Message);
                 if (transaction != null)
                 {
+                    // Revertir la transacción si ocurre un error
                     transaction.Rollback();
                 }
                 return false;

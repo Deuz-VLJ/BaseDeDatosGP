@@ -79,7 +79,7 @@ namespace BaseDeDatosGP
                 try
                 {
                     // Consulta SQL para insertar un nuevo cliente
-                    string query = "INSERT INTO Cliente (Nombre, Telefono, Direccion) VALUES (@Nombre, @Telefono, @Direccion)";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    INSERT INTO Cliente (Nombre, Telefono, Direccion) \r\n    VALUES (@Nombre, @Telefono, @Direccion);\r\n\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    ROLLBACK TRANSACTION;\r\n    THROW; -- Opcional: Relanza el error para que sea manejado por el cliente\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {
@@ -186,7 +186,7 @@ namespace BaseDeDatosGP
             {
                 try
                 {
-                    string query = "UPDATE Cliente SET Nombre = @Nombre, Telefono = @Telefono, Direccion = @Direccion WHERE ID_Cliente = @ID_Cliente";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    UPDATE Cliente\r\n    SET Nombre = @Nombre, Telefono = @Telefono, Direccion = @Direccion\r\n    WHERE ID_Cliente = @ID_Cliente;\r\n\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    ROLLBACK TRANSACTION;\r\n    THROW; -- Opcional: Relanza el error para que sea manejado por el cliente\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {
@@ -260,7 +260,7 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "DELETE FROM Cliente WHERE ID_Cliente = @ID_Cliente";
+                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    DELETE FROM Cliente\r\n    WHERE ID_Cliente = @ID_Cliente;\r\n\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    ROLLBACK TRANSACTION;\r\n    THROW; -- Opcional: Relanza el error para que sea manejado por el cliente\r\nEND CATCH;";
 
                     using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
                     {

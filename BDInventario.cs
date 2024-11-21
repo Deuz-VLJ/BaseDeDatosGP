@@ -141,10 +141,25 @@ namespace BaseDeDatosGP
                 try
                 {
                     // Insertar en la tabla Inventario
-                    string queryInventario = @"
-            INSERT INTO Inventario (Fecha_Registro, Observaciones, Importe, IVA, Total, ID_Proveedor) 
-            VALUES (@Fecha_Registro, @Observaciones, @Importe, @IVA, @Total, @ID_Proveedor);
-            SELECT SCOPE_IDENTITY();"; // Obtener el ID del nuevo inventario
+                    string queryInventario = @" BEGIN TRANSACTION; BEGIN TRY
+                        INSERT INTO Inventario (Fecha_Registro, Observaciones, Importe, IVA, Total, ID_Proveedor) 
+                        VALUES (@Fecha_Registro, @Observaciones, @Importe, @IVA, @Total, @ID_Proveedor);
+
+                        -- Obtener el ID generado
+                        DECLARE @NuevoID INT;
+                        SET @NuevoID = SCOPE_IDENTITY();
+
+                        COMMIT TRANSACTION;
+
+                        -- Retornar el ID generado
+                        SELECT @NuevoID AS NuevoID;
+                    END TRY
+                    BEGIN CATCH
+                        ROLLBACK TRANSACTION;
+
+                        -- Relanzar el error para manejo externo si es necesario
+                        THROW;
+                    END CATCH;"; // Obtener el ID del nuevo inventario
 
                     SqlCommand cmdInventario = new SqlCommand(queryInventario, conexion, transaction);
                     cmdInventario.Parameters.AddWithValue("@Fecha_Registro", fechaRegistro);
@@ -158,9 +173,18 @@ namespace BaseDeDatosGP
                     int idInventario = Convert.ToInt32(cmdInventario.ExecuteScalar());
 
                     // Insertar en la tabla DetalleInventario
-                    string queryDetalleInventario = @"
-            INSERT INTO DetalleInventario (ID_Inventario, ID_Producto, Cantidad_Entrante, Costo_Unitario, Subtotal) 
-            VALUES (@ID_Inventario, @ID_Producto, @Cantidad_Entrante, @Costo_Unitario, @Subtotal);";
+                    string queryDetalleInventario = @"BEGIN TRANSACTION;
+
+                        BEGIN TRY
+                            INSERT INTO DetalleInventario (ID_Inventario, ID_Producto, Cantidad_Entrante, Costo_Unitario, Subtotal) 
+                            VALUES (@ID_Inventario, @ID_Producto, @Cantidad_Entrante, @Costo_Unitario, @Subtotal);
+
+                            COMMIT TRANSACTION;
+                        END TRY
+                        BEGIN CATCH
+                            ROLLBACK TRANSACTION;
+                            THROW; -- Opcional: relanza el error
+                        END CATCH;";
 
                     SqlCommand cmdDetalleInventario = new SqlCommand(queryDetalleInventario, conexion, transaction);
                     cmdDetalleInventario.Parameters.AddWithValue("@ID_Inventario", idInventario);
@@ -181,9 +205,19 @@ namespace BaseDeDatosGP
                     {
                         // Si el producto ya está en Saldos, actualizar la cantidad entrante
                         string queryActualizarSaldo = @"
-                UPDATE Saldos 
-                SET Cantidad_Entrante = Cantidad_Entrante + @Cantidad_Entrante 
-                WHERE ID_Producto = @ID_Producto;";
+                                    BEGIN TRANSACTION;
+
+                                    BEGIN TRY
+                                        UPDATE Saldos 
+                                        SET Cantidad_Entrante = Cantidad_Entrante + @Cantidad_Entrante 
+                                        WHERE ID_Producto = @ID_Producto;
+
+                                        COMMIT TRANSACTION;
+                                    END TRY
+                                    BEGIN CATCH
+                                        ROLLBACK TRANSACTION;
+                                        THROW; -- Opcional: relanza el error
+                                    END CATCH;;";
 
                         SqlCommand cmdActualizarSaldo = new SqlCommand(queryActualizarSaldo, conexion, transaction);
                         cmdActualizarSaldo.Parameters.AddWithValue("@Cantidad_Entrante", cantidadEntrante);
@@ -194,9 +228,18 @@ namespace BaseDeDatosGP
                     else
                     {
                         // Si el producto no está en Saldos, insertar un nuevo registro
-                        string queryInsertarSaldo = @"
-                INSERT INTO Saldos (ID_Producto, Cantidad_Entrante, Cantidad_Salida) 
-                VALUES (@ID_Producto, @Cantidad_Entrante, 0);"; // Asumiendo que la salida inicial es 0
+                        string queryInsertarSaldo = @"BEGIN TRANSACTION;
+
+                            BEGIN TRY
+                                INSERT INTO Saldos (ID_Producto, Cantidad_Entrante, Cantidad_Salida) 
+                                VALUES (@ID_Producto, @Cantidad_Entrante, 0);
+
+                                COMMIT TRANSACTION;
+                            END TRY
+                            BEGIN CATCH
+                                ROLLBACK TRANSACTION;
+                                THROW; -- Opcional: relanza el error
+                            END CATCH;"; // Asumiendo que la salida inicial es 0
 
                         SqlCommand cmdInsertarSaldo = new SqlCommand(queryInsertarSaldo, conexion, transaction);
                         cmdInsertarSaldo.Parameters.AddWithValue("@ID_Producto", idProducto);
