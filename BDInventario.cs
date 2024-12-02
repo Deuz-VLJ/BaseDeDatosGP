@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -64,72 +65,12 @@ namespace BaseDeDatosGP
             MensajeError = string.Empty;
         }
 
-
-        /*  public void AgregarProductoAlInventario(DateTime fechaRegistro, string observaciones, decimal importe, decimal iva, decimal total, int idProveedor, int idProducto, int cantidadEntrante, decimal costoUnitario)
-          {
-              // Abrir la conexión
-              if (!AbrirConexion())
-              {
-                  throw new Exception("No se pudo abrir la conexión a la base de datos.");
-              }
-
-              // Iniciar una transacción
-              using (SqlTransaction transaction = conexion.BeginTransaction())
-              {
-                  try
-                  {
-                      // Insertar en la tabla Inventario
-                      string queryInventario = @"
-                      INSERT INTO Inventario (Fecha_Registro, Observaciones, Importe, IVA, Total, ID_Proveedor) 
-                      VALUES (@Fecha_Registro, @Observaciones, @Importe, @IVA, @Total, @ID_Proveedor);
-                      SELECT SCOPE_IDENTITY();"; // Obtener el ID del nuevo inventario
-
-                      SqlCommand cmdInventario = new SqlCommand(queryInventario, conexion, transaction);
-                      cmdInventario.Parameters.AddWithValue("@Fecha_Registro", fechaRegistro);
-                      cmdInventario.Parameters.AddWithValue("@Observaciones", observaciones);
-                      cmdInventario.Parameters.AddWithValue("@Importe", importe);
-                      cmdInventario.Parameters.AddWithValue("@IVA", iva);
-                      cmdInventario.Parameters.AddWithValue("@Total", total);
-                      cmdInventario.Parameters.AddWithValue("@ID_Proveedor", idProveedor);
-
-                      // Obtener el ID del inventario recién insertado
-                      int idInventario = Convert.ToInt32(cmdInventario.ExecuteScalar());
-
-                      // Insertar en la tabla DetalleInventario
-                      string queryDetalleInventario = @"
-                      INSERT INTO DetalleInventario (ID_Inventario, ID_Producto, Cantidad_Entrante, Costo_Unitario, Subtotal) 
-                      VALUES (@ID_Inventario, @ID_Producto, @Cantidad_Entrante, @Costo_Unitario, @Subtotal);";
-
-                      SqlCommand cmdDetalleInventario = new SqlCommand(queryDetalleInventario, conexion, transaction);
-                      cmdDetalleInventario.Parameters.AddWithValue("@ID_Inventario", idInventario);
-                      cmdDetalleInventario.Parameters.AddWithValue("@ID_Producto", idProducto);
-                      cmdDetalleInventario.Parameters.AddWithValue("@Cantidad_Entrante", cantidadEntrante);
-                      cmdDetalleInventario.Parameters.AddWithValue("@Costo_Unitario", costoUnitario);
-                      cmdDetalleInventario.Parameters.AddWithValue("@Subtotal", costoUnitario * cantidadEntrante); // Calcular subtotal
-
-                      cmdDetalleInventario.ExecuteNonQuery();
-
-                      // Confirmar la transacción
-                      transaction.Commit();
-                  }
-                  catch (Exception ex)
-                  {
-                      // Deshacer la transacción en caso de error
-                      transaction.Rollback();
-                      throw new Exception("Error al agregar el producto al inventario: " + ex.Message);
-                  }
-                  finally
-                  {
-                      // Cerrar la conexión
-                      CerrarConexion();
-                  }
-              }
-          }*/
+        /*
         public void AgregarProductoAlInventario(DateTime fechaRegistro, string observaciones, decimal importe, decimal iva, decimal total, int idProveedor, int idProducto, int cantidadEntrante, decimal costoUnitario)
         {
             // Abrir la conexión
             ConexionInisio con = new ConexionInisio();
-           
+
             if (!con.AbrirConexion())
             {
                 throw new Exception("No se pudo abrir la conexión a la base de datos.");
@@ -257,7 +198,7 @@ namespace BaseDeDatosGP
                     CapturarError(ex);
                     transaction.Rollback();
                     throw new Exception("Error al agregar el producto al inventario: " + ex.Message);
-                    
+
                 }
                 finally
                 {
@@ -265,7 +206,138 @@ namespace BaseDeDatosGP
                     con.CerrarConexion();
                 }
             }
+        }*/
+
+        //listo
+        public void AgregarProductoAlInventario(DateTime fechaRegistro, string observaciones, decimal importe, decimal iva, decimal total, int idProveedor, int idProducto, int cantidadEntrante, decimal costoUnitario)
+        {
+            ConexionInisio con = new ConexionInisio();
+
+            try
+            {
+                if (!con.AbrirConexion())
+                {
+                    throw new Exception("No se pudo abrir la conexión a la base de datos.");
+                }
+
+                using (SqlCommand cmd = new SqlCommand("sp_AltaInventario", con.ObtenerConexion()))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    // Agregar los parámetros al comando
+                    cmd.Parameters.AddWithValue("@Fecha_Registro", fechaRegistro);
+                    cmd.Parameters.AddWithValue("@Observaciones", observaciones);
+                    cmd.Parameters.AddWithValue("@Importe", importe);
+                    cmd.Parameters.AddWithValue("@IVA", iva);
+                    cmd.Parameters.AddWithValue("@Total", total);
+                    cmd.Parameters.AddWithValue("@ID_Proveedor", idProveedor);
+                    cmd.Parameters.AddWithValue("@ID_Producto", idProducto);
+                    cmd.Parameters.AddWithValue("@Cantidad_Entrante", cantidadEntrante);
+                    cmd.Parameters.AddWithValue("@Costo_Unitario", costoUnitario);
+
+                    // Ejecutar el procedimiento almacenado
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (SqlException ex)
+            {
+                CapturarError(ex);
+                throw new Exception("Error al agregar el producto al inventario: " + ex.Message);
+            }
+            finally
+            {
+                con.CerrarConexion();
+            }
         }
+
+
+        public bool EliminarInventario(int idInventario)
+        {
+            bool resultado = false;
+            ConexionInisio con = new ConexionInisio();
+
+            try
+            {
+                if (con.AbrirConexion())
+                {
+                    // Crear el comando para ejecutar el procedimiento almacenado
+                    using (SqlCommand cmd = new SqlCommand("sp_BajaInventario", con.ObtenerConexion()))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        // Agregar el parámetro necesario
+                        cmd.Parameters.AddWithValue("@ID_Inventario", idInventario);
+
+                        // Ejecutar el procedimiento almacenado
+                        int filasAfectadas = cmd.ExecuteNonQuery();
+
+                        // Verificar si se afectaron filas para considerar el borrado exitoso
+                        resultado = filasAfectadas > 0;
+                    }
+
+                    con.CerrarConexion();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Manejo de errores
+                CapturarError(ex);
+                Console.WriteLine("Error al eliminar el inventario: " + ex.Message);
+            }
+
+            return resultado;
+        }
+        public List<Inventario> ObtenerInventarioPorID(int idInventario)
+        {
+            List<Inventario> listaInventarios = new List<Inventario>();
+            ConexionInisio con = new ConexionInisio();
+
+            try
+            {
+                if (con.AbrirConexion())
+                {
+                    // Consulta SQL para obtener el inventario por ID
+                    string query = "SELECT ID_Inventario, Fecha_Registro, Observaciones, Importe, IVA, Total, ID_Proveedor " +
+                                   "FROM Inventario WHERE ID_Inventario = @ID_Inventario;";
+
+                    using (SqlCommand cmd = new SqlCommand(query, con.ObtenerConexion()))
+                    {
+                        cmd.Parameters.AddWithValue("@ID_Inventario", idInventario);
+
+                        // Ejecutar la consulta
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Inventario inventario = new Inventario
+                                {
+                                    ID_Inventario = reader.GetInt32(reader.GetOrdinal("ID_Inventario")),
+                                    Fecha_Registro = reader.GetDateTime(reader.GetOrdinal("Fecha_Registro")),
+                                    Observaciones = reader.IsDBNull(reader.GetOrdinal("Observaciones")) ? null : reader.GetString(reader.GetOrdinal("Observaciones")),
+                                    Importe = reader.GetDecimal(reader.GetOrdinal("Importe")),
+                                    IVA = reader.GetDecimal(reader.GetOrdinal("IVA")),
+                                    Total = reader.GetDecimal(reader.GetOrdinal("Total")),
+                                    //ID_Proveedor = reader.GetInt32(reader.GetOrdinal("ID_Proveedor"))
+                                };
+
+                                // Agregar el objeto inventario a la lista
+                                listaInventarios.Add(inventario);
+                            }
+                        }
+                    }
+
+                    con.CerrarConexion();
+                }
+            }
+            catch (Exception ex)
+            {
+                CapturarError(ex);
+                throw new Exception("Error al obtener el inventario: " + ex.Message);
+            }
+
+            return listaInventarios;
+        }
+
 
         public List<string> ObtenerNombresProveedores()
         {
@@ -402,6 +474,48 @@ namespace BaseDeDatosGP
             }
 
             return listaInventarios;
+        }
+
+        public bool ActualizarInventario(int idInventario, DateTime fechaRegistro, string observaciones, decimal importe, decimal iva, decimal total)
+        {
+            bool resultado = false;
+            ConexionInisio con = new ConexionInisio();
+
+            try
+            {
+                if (con.AbrirConexion())
+                {
+                    // Llamada al procedimiento almacenado sp_ActualizarInventario
+                    string spActualizarInventario = "sp_ActualizarInventario"; // Nombre del procedimiento almacenado
+
+                    using (SqlCommand cmd = new SqlCommand(spActualizarInventario, con.ObtenerConexion()))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        // Agregar los parámetros necesarios para el procedimiento almacenado
+                        cmd.Parameters.AddWithValue("@ID_Inventario", idInventario);
+                        cmd.Parameters.AddWithValue("@Fecha_Registro", fechaRegistro);
+                        cmd.Parameters.AddWithValue("@Observaciones", observaciones);
+                        cmd.Parameters.AddWithValue("@Importe", importe);
+                        cmd.Parameters.AddWithValue("@IVA", iva);
+                        cmd.Parameters.AddWithValue("@Total", total);
+
+                        // Ejecutar el comando y verificar si se actualizó algún registro
+                        int filasAfectadas = cmd.ExecuteNonQuery();
+                        resultado = filasAfectadas > 0;
+                    }
+
+                    con.CerrarConexion();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Manejar el error, capturando detalles
+                CapturarError(ex);
+                Console.WriteLine("Error al actualizar inventario: " + ex.Message);
+            }
+
+            return resultado;
         }
 
         public List<DetalleInventario> ObtenerDetallesDeInventarioPorIDProducto(int idProducto)

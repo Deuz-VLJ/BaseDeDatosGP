@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -63,7 +64,7 @@ namespace BaseDeDatosGP
         }
 
 
-
+        //listo
         public bool InsertarProducto(string nombre, decimal precio, string descripcion)
         {
             bool resultado = false;
@@ -72,12 +73,17 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el INSERT\r\n    INSERT INTO Producto (Nombre, Precio, Descripcion) \r\n    VALUES (@Nombre, @Precio, @Descripcion);\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-                    using (SqlCommand cmd = new SqlCommand(query, con.ObtenerConexion()))
+                    // Usar el procedimiento almacenado sp_AltaProducto
+                    using (SqlCommand cmd = new SqlCommand("sp_AltaProducto", con.ObtenerConexion()))
                     {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        // Agregar los parámetros
                         cmd.Parameters.AddWithValue("@Nombre", nombre);
                         cmd.Parameters.AddWithValue("@Precio", precio);
                         cmd.Parameters.AddWithValue("@Descripcion", descripcion);
+
+                        // Ejecutar el procedimiento almacenado
                         cmd.ExecuteNonQuery();
                         resultado = true;
                     }
@@ -85,10 +91,14 @@ namespace BaseDeDatosGP
                     con.CerrarConexion();
                 }
             }
-            catch (Exception ex)
+            catch (SqlException ex)
             {
                 CapturarError(ex);
                 Console.WriteLine("Error al insertar producto: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error general: " + ex.Message);
             }
 
             return resultado;
@@ -145,22 +155,27 @@ namespace BaseDeDatosGP
         }
 
 
-
+        //listo
         public bool ModificarProducto(int idProducto, string nombre, decimal precio, string descripcion)
         {
             bool resultado = false;
-            ConexionInisio con = new ConexionInisio();  
+            ConexionInisio con = new ConexionInisio();
             try
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el UPDATE\r\n    UPDATE Producto \r\n    SET Nombre = @Nombre, Precio = @Precio, Descripcion = @Descripcion \r\n    WHERE ID_Producto = @ID_Producto;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-                    using (SqlCommand cmd = new SqlCommand(query, con.ObtenerConexion()))
+                    // Usar el procedimiento almacenado sp_ActualizarProducto
+                    using (SqlCommand cmd = new SqlCommand("sp_ActualizarProducto", con.ObtenerConexion()))
                     {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        // Agregar los parámetros
                         cmd.Parameters.AddWithValue("@ID_Producto", idProducto);
                         cmd.Parameters.AddWithValue("@Nombre", nombre);
                         cmd.Parameters.AddWithValue("@Precio", precio);
                         cmd.Parameters.AddWithValue("@Descripcion", descripcion);
+
+                        // Ejecutar el procedimiento almacenado
                         cmd.ExecuteNonQuery();
                         resultado = true;
                     }
@@ -168,64 +183,38 @@ namespace BaseDeDatosGP
                     con.CerrarConexion();
                 }
             }
+            catch (SqlException ex)
+            {
+                CapturarError(ex);
+                Console.WriteLine("Error al modificar producto: " + ex.Message);
+            }
             catch (Exception ex)
             {
-                CapturarError (ex);
-                Console.WriteLine("Error al modificar producto: " + ex.Message);
+                Console.WriteLine("Error general: " + ex.Message);
             }
 
             return resultado;
         }
 
 
-
+       //listo
         public bool EliminarProducto(int idProducto)
         {
-            //try
-            //{
-            //    using (SqlConnection conexion = new SqlConnection("Server=localhost;Database=GestionProductos;User Id=sa;Password=J17u20a04n7;"))
-            //    {
-            //        conexion.Open();
-            //        string query;
-            //        if (int.TryParse(nombreOId, out int id))
-            //        {
-            //            query = "DELETE FROM Producto WHERE ID_Producto = @ID_Producto";
-            //        }
-            //        else
-            //        {
-            //            query = "DELETE FROM Producto WHERE Nombre = @Nombre";
-            //        }
-
-            //        SqlCommand cmd = new SqlCommand(query, conexion);
-            //        if (int.TryParse(nombreOId, out id))
-            //        {
-            //            cmd.Parameters.AddWithValue("@ID_Producto", id);
-            //        }
-            //        else
-            //        {
-            //            cmd.Parameters.AddWithValue("@Nombre", nombreOId);
-            //        }
-
-            //        cmd.ExecuteNonQuery();
-            //        return true;
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Error al eliminar producto: " + ex.Message);
-            //    return false;
             bool resultado = false;
             ConexionInisio con = new ConexionInisio();
             try
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el DELETE\r\n    DELETE FROM Producto \r\n    WHERE ID_Producto = @ID_Producto;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-
-                    using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
+                    // Usar el procedimiento almacenado sp_BajaProducto
+                    using (SqlCommand comando = new SqlCommand("sp_BajaProducto", con.ObtenerConexion()))
                     {
+                        comando.CommandType = CommandType.StoredProcedure;
+
+                        // Agregar el parámetro necesario
                         comando.Parameters.AddWithValue("@ID_Producto", idProducto);
 
+                        // Ejecutar el procedimiento almacenado
                         int filasAfectadas = comando.ExecuteNonQuery();
                         resultado = filasAfectadas > 0;
                     }
@@ -233,16 +222,19 @@ namespace BaseDeDatosGP
                     con.CerrarConexion();
                 }
             }
-            catch (Exception ex)
+            catch (SqlException ex)
             {
-                // Manejar el error según sea necesario
                 CapturarError(ex);
                 Console.WriteLine("Error al eliminar el producto: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error general: " + ex.Message);
             }
 
             return resultado;
         }
-        
+
 
 
 
