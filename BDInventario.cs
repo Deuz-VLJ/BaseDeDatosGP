@@ -518,6 +518,45 @@ namespace BaseDeDatosGP
             return resultado;
         }
 
+
+        public bool ActualizarDetalleInventario(int idDetalleInventario, int idProducto, int cantidadEntrante, decimal costoUnitario, decimal subtotal)
+        {
+            ConexionInisio con = new ConexionInisio();
+
+            try
+            {
+                if (!con.AbrirConexion())
+                {
+                    throw new Exception("No se pudo abrir la conexión a la base de datos.");
+                }
+
+                using (SqlCommand cmd = new SqlCommand("sp_ActualizarDetalleInventario", con.ObtenerConexion()))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    // Agregar parámetros al comando
+                    cmd.Parameters.AddWithValue("@ID_Detalle_Inventario", idDetalleInventario);
+                    cmd.Parameters.AddWithValue("@ID_Producto", idProducto);
+                    cmd.Parameters.AddWithValue("@Cantidad_Entrante", cantidadEntrante);
+                    cmd.Parameters.AddWithValue("@Costo_Unitario", costoUnitario);
+                    cmd.Parameters.AddWithValue("@Subtotal", subtotal);
+
+                    // Ejecutar el procedimiento almacenado
+                    int filasAfectadas = cmd.ExecuteNonQuery();
+                    return filasAfectadas > 0; // Devuelve true si se actualizó al menos una fila
+                }
+            }
+            catch (SqlException ex)
+            {
+                CapturarError(ex);
+                return false;
+            }
+            finally
+            {
+                con.CerrarConexion();
+            }
+        }
+
         public List<DetalleInventario> ObtenerDetallesDeInventarioPorIDProducto(int idProducto)
         {
             List<DetalleInventario> listaDetalles = new List<DetalleInventario>();
@@ -569,6 +608,58 @@ namespace BaseDeDatosGP
             return listaDetalles;
         }
 
+
+        public List<DetalleInventario> ObtenerDetallesDeInventarioPorIDInventario(int idInventario)
+        {
+            List<DetalleInventario> listaDetalles = new List<DetalleInventario>();
+            ConexionInisio con = new ConexionInisio();
+
+            if (con.AbrirConexion())
+            {
+                SqlConnection conexion = con.ObtenerConexion();
+                try
+                {
+                    string query = @"
+            SELECT di.ID_Detalle_Inventario, di.ID_Inventario, di.ID_Producto, p.Nombre AS NombreProducto, 
+                   di.Cantidad_Entrante, di.Costo_Unitario, di.Subtotal
+            FROM DetalleInventario di
+            JOIN Producto p ON di.ID_Producto = p.ID_Producto
+            WHERE di.ID_Inventario = @IDInventario";
+
+                    SqlCommand comando = new SqlCommand(query, conexion);
+                    comando.Parameters.AddWithValue("@IDInventario", idInventario);
+                    SqlDataReader reader = comando.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        DetalleInventario detalle = new DetalleInventario
+                        {
+                            ID_Detalle_Inventario = Convert.ToInt32(reader["ID_Detalle_Inventario"]),
+                            ID_Inventario = Convert.ToInt32(reader["ID_Inventario"]),
+                            ID_Producto = Convert.ToInt32(reader["ID_Producto"]),
+                            NombreProducto = reader["NombreProducto"].ToString(),
+                            Cantidad_Entrante = Convert.ToInt32(reader["Cantidad_Entrante"]),
+                            Costo_Unitario = Convert.ToDecimal(reader["Costo_Unitario"]),
+                            Subtotal = Convert.ToDecimal(reader["Subtotal"])
+                        };
+
+                        listaDetalles.Add(detalle);
+                    }
+                    reader.Close();
+                }
+                catch (SqlException ex)
+                {
+                    CapturarError(ex);
+                    Console.WriteLine("Error al obtener los detalles del inventario por ID del inventario: " + ex.Message);
+                }
+                finally
+                {
+                    con.CerrarConexion();
+                }
+            }
+
+            return listaDetalles;
+        }
 
     }
 

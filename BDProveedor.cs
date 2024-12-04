@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -77,22 +78,64 @@ namespace BaseDeDatosGP
 
         public bool InsertarProveedor(string nombre, string telefono, string direccion)
         {
+            //ConexionInisio con = new ConexionInisio();
+            //if (con.AbrirConexion())
+            //{
+            //    try
+            //    {
+            //        // Consulta SQL para insertar un nuevo Proveedor
+            //        string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el INSERT\r\n    INSERT INTO Proveedor (Nombre, Telefono, Direccion) \r\n    VALUES (@Nombre, @Telefono, @Direccion);\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
+
+            //        using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
+            //        {
+            //            // Asignar los valores de los parámetros
+            //            comando.Parameters.AddWithValue("@Nombre", nombre);
+            //            comando.Parameters.AddWithValue("@Telefono", telefono);
+            //            comando.Parameters.AddWithValue("@Direccion", direccion);
+
+            //            // Ejecutar el comando
+            //            int filasAfectadas = comando.ExecuteNonQuery();
+
+            //            if (filasAfectadas > 0)
+            //            {
+            //                Console.WriteLine("Proveedor insertado con éxito.");
+            //                return true;
+            //            }
+            //            else
+            //            {
+            //                Console.WriteLine("No se pudo insertar el Proveedor.");
+            //                return false;
+            //            }
+            //        }
+            //    }
+            //    catch (SqlException ex)
+            //    {
+            //        CapturarError(ex);
+            //        Console.WriteLine("Error al insertar el Proveedor: " + ex.Message);
+            //        return false;
+            //    }
+            //    finally
+            //    {
+            //        con.CerrarConexion();
+            //    }
+            //}
+            //return false;
+
             ConexionInisio con = new ConexionInisio();
-            if (con.AbrirConexion())
+            try
             {
-                try
+                if (con.AbrirConexion())
                 {
-                    // Consulta SQL para insertar un nuevo Proveedor
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el INSERT\r\n    INSERT INTO Proveedor (Nombre, Telefono, Direccion) \r\n    VALUES (@Nombre, @Telefono, @Direccion);\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-
-                    using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
+                    using (SqlCommand comando = new SqlCommand("sp_AltaProveedor", con.ObtenerConexion()))
                     {
-                        // Asignar los valores de los parámetros
-                        comando.Parameters.AddWithValue("@Nombre", nombre);
-                        comando.Parameters.AddWithValue("@Telefono", telefono);
-                        comando.Parameters.AddWithValue("@Direccion", direccion);
+                        comando.CommandType = CommandType.StoredProcedure;
 
-                        // Ejecutar el comando
+                        // Asignar los valores de los parámetros al procedimiento almacenado
+                        comando.Parameters.AddWithValue("@Nombre", nombre);
+                        comando.Parameters.AddWithValue("@Telefono", string.IsNullOrEmpty(telefono) ? (object)null : telefono);
+                        comando.Parameters.AddWithValue("@Direccion", string.IsNullOrEmpty(direccion) ? (object)null : direccion);
+
+                        // Ejecutar el procedimiento almacenado
                         int filasAfectadas = comando.ExecuteNonQuery();
 
                         if (filasAfectadas > 0)
@@ -102,23 +145,24 @@ namespace BaseDeDatosGP
                         }
                         else
                         {
-                            Console.WriteLine("No se pudo insertar el Proveedor.");
+                            Console.WriteLine("No se pudo insertar el proveedor.");
                             return false;
                         }
                     }
                 }
-                catch (SqlException ex)
-                {
-                    CapturarError(ex);
-                    Console.WriteLine("Error al insertar el Proveedor: " + ex.Message);
-                    return false;
-                }
-                finally
-                {
-                    con.CerrarConexion();
-                }
+            }
+            catch (SqlException ex)
+            {
+                CapturarError(ex);
+                Console.WriteLine("Error al insertar el proveedor: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                con.CerrarConexion();
             }
             return false;
+
         }
 
         // Método para consultar los clientes por nombre o ID
@@ -185,16 +229,20 @@ namespace BaseDeDatosGP
             {
                 try
                 {
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el UPDATE\r\n    UPDATE Proveedor \r\n    SET Nombre = @Nombre, Telefono = @Telefono, Direccion = @Direccion \r\n    WHERE ID_Proveedor = @ID_Proveedor;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-
-                    using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
+                    // Llamar al procedimiento almacenado sp_ModificarProveedor
+                    using (SqlCommand comando = new SqlCommand("sp_ModificarProveedor", con.ObtenerConexion()))
                     {
+                        comando.CommandType = CommandType.StoredProcedure;
+
+                        // Asignar los parámetros necesarios para el procedimiento almacenado
                         comando.Parameters.AddWithValue("@ID_Proveedor", proveedor.ID_Proveedor);
                         comando.Parameters.AddWithValue("@Nombre", proveedor.Nombre);
                         comando.Parameters.AddWithValue("@Telefono", proveedor.Telefono);
                         comando.Parameters.AddWithValue("@Direccion", proveedor.Direccion);
 
+                        // Ejecutar el procedimiento almacenado
                         int filasAfectadas = comando.ExecuteNonQuery();
+
                         return filasAfectadas > 0; // Retorna true si se actualizó al menos una fila
                     }
                 }
@@ -262,14 +310,15 @@ namespace BaseDeDatosGP
             {
                 if (con.AbrirConexion())
                 {
-                    string query = "BEGIN TRANSACTION;\r\n\r\nBEGIN TRY\r\n    -- Intentar realizar el DELETE\r\n    DELETE FROM Proveedor \r\n    WHERE ID_Proveedor = @ID_Proveedor;\r\n\r\n    -- Confirmar la transacción\r\n    COMMIT TRANSACTION;\r\nEND TRY\r\nBEGIN CATCH\r\n    -- Revertir la transacción si ocurre un error\r\n    ROLLBACK TRANSACTION;\r\n\r\n    -- Relanzar el error para manejo adicional (opcional)\r\n    THROW;\r\nEND CATCH;";
-
-                    using (SqlCommand comando = new SqlCommand(query, con.ObtenerConexion()))
+                    // Usar el procedimiento almacenado sp_EliminarProveedor
+                    using (SqlCommand comando = new SqlCommand("sp_EliminarProveedor", con.ObtenerConexion()))
                     {
+                        comando.CommandType = CommandType.StoredProcedure;
                         comando.Parameters.AddWithValue("@ID_Proveedor", idProveedor);
 
+                        // Ejecutar el comando
                         int filasAfectadas = comando.ExecuteNonQuery();
-                        resultado = filasAfectadas > 0;
+                        resultado = filasAfectadas > 0; // Retorna true si se eliminó al menos una fila
                     }
 
                     con.CerrarConexion();
@@ -277,7 +326,7 @@ namespace BaseDeDatosGP
             }
             catch (Exception ex)
             {
-                CapturarError (ex);
+                CapturarError(ex);
                 Console.WriteLine("Error al eliminar el proveedor: " + ex.Message);
             }
 
